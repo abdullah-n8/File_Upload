@@ -4,6 +4,19 @@ const app = express();
 const multer = require("multer");
 const path = require("path");
 
+// const allowedOrigins = ["http://localhost:3000"];
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
+
+app.use(express.static(__dirname + "/uploads"));
+
 const upload = multer({
   dest: "./uploads/",
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
