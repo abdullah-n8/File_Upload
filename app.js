@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const multer = require("multer");
 const path = require("path");
+const port = 3001;
 
 // const allowedOrigins = ["http://localhost:3000"];
 
@@ -17,9 +18,22 @@ app.use((req, res, next) => {
 
 app.use(express.static(__dirname + "/uploads"));
 
+const storage = multer.diskStorage({
+  destination: "./uploads/",
+  filename(req, file, cb) {
+    const uniqueSuffix = `${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+    const filename = `${
+      file.originalname.split(".")[0]
+    }-${uniqueSuffix}.${file.originalname.split(".").pop()}`;
+    cb(null, filename);
+  },
+});
+
 const upload = multer({
-  dest: "./uploads/",
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter(req, file, cb) {
     if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
       return cb(new Error("Only image files are allowed!"));
@@ -30,22 +44,25 @@ const upload = multer({
 
 const uploadRouter = express.Router();
 
-uploadRouter.post("/upload", upload.single("image"), (req, res) => {
+uploadRouter.post("/upload", upload.single("file"), (req, res) => {
   const file = req.file;
-  console.log(file);
 
   if (!file) {
     return res.status(400).send({ message: "No file uploaded" });
   }
 
-  const filePath = path.join(__dirname, file.path);
+  const modifiedFilePath = file.path.split("\\")[1];
 
-  res.sendFile(filePath);
+  const filePath = `http://localhost:${port}/${modifiedFilePath}`;
+
+  res.send({
+    filename: file.originalname,
+    filePath,
+  });
 });
 
 app.use("/api", uploadRouter);
 
-const port = 3001;
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
